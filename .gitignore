@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pyc
+
+# Build output
+build/MicroFish.app/
+frontend/dist/
+dist/
+
+# Environment & secrets
+.env
+
+# Machine backups and signing keys (never commit)
+secrets/
+.zshrc.imac-backup
+*.p8
+*.pem
+*.p12
+AuthKey_*
+.env.local
+.env.*.local
+
+# Uploads & runtime data
+backend/app/uploads/
+backend/uploads/
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# uv lock is kept (commented out intentionally)
+# uv.lock

@@ -1,0 +1,36 @@
+# ===========================================
+# MicroFish Backend Dependencies
+# ===========================================
+# Python 3.11+ required
+# Install: pip install -r requirements.txt
+# ===========================================
+
+# ============= Core framework =============
+flask>=3.0.0
+flask-cors>=6.0.0
+
+# ============= LLM related =============
+# OpenAI SDK (unified LLM calls using the OpenAI format)
+openai>=1.0.0
+
+# ============= Zep Cloud =============
+zep-cloud==3.13.0
+
+# ============= OASIS social media simulation =============
+# OASIS replacement - local implementation (no external dependencies)
+# Uses local LLM endpoint directly via openai SDK
+# camel-oasis==0.2.5  # REMOVED - using local implementation
+# camel-ai==0.2.78    # REMOVED - using local implementation
+
+# ============= File processing =============
+PyMuPDF>=1.24.0
+# Encoding detection (supports non-UTF-8 text files)
+charset-normalizer>=3.0.0
+chardet>=5.0.0
+
+# ============= Utilities =============
+# Environment variable loading
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.0.0

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Product Privacy Backlash",
+    "file": "product-launch-backlash.md",
+    "description": "A wearables company is caught sharing biometric data by default. Consumer tech crisis.",
+    "prompt": "Simulate how this privacy controversy spreads and resolves across social media over the coming weeks.\n\nModel the reactions of: the company's leadership defending itself, the security researcher who found the issue, technology journalists deciding how hard to push, the influencer who lost trust in the product, technical communities on Reddit and X, mainstream consumers who are confused about whether their data was exposed, privacy advocacy organizations pushing for regulatory action, and lawmakers looking for a public win.\n\nTrack:\n- Which voices drive the narrative and at what point momentum shifts\n- Whether the CEO's reversal repairs trust or reads as damage control\n- How technical and non-technical audiences diverge in their interpretation\n- Whether the story escalates to regulatory action or fades\n\nIdentify the response strategy that would have minimized reputational damage."
+  },
+  {
+    "name": "Research Misconduct",
+    "file": "university-research-scandal.md",
+    "description": "Retracted Alzheimer's papers trigger an institutional integrity crisis.",
+    "prompt": "Simulate the academic and public reaction to this research misconduct case as it unfolds.\n\nModel the reactions of: the senior professor defending his work, the junior researcher facing disproportionate blame, the anonymous forensic analyst who exposed it, university administrators constrained by confidentiality rules, other researchers whose funding depends on the retracted findings, graduate students and postdocs watching how trainees are treated, science journalists, funding agency officials, and patient advocacy communities losing faith in the field.\n\nTrack:\n- How blame is distributed between the senior PI and the junior first author, and whether that shifts\n- The generational split between junior and senior researchers in their reactions\n- Whether institutional silence is read as due process or as protecting a powerful faculty member\n- How the story mutates when it reaches non-scientific audiences\n\nIdentify what institutional response would best preserve trust in the research process."
+  },
+  {
+    "name": "Civic Referendum",
+    "file": "city-transit-referendum.md",
+    "description": "A light rail measure fractures a city along unexpected coalition lines.",
+    "prompt": "Simulate the public debate around this transit referendum through to the June vote.\n\nModel the reactions of: the mayor defending her legacy project, the transit director who concealed the route change, the pastor leading neighborhood opposition, anti-tax organizers finding unlikely allies, the council member caught between constituents and party, young pro-transit activists, local journalists, business owners, transit union members, and ordinary residents who support transit but not this route.\n\nTrack:\n- How the coalition lines form and whether the unusual alliance between fiscal conservatives and Fairhaven residents holds\n- The split among progressive voters between climate priorities and displacement concerns\n- How neighborhood-level discussion differs from citywide discourse\n- Whether turnout dynamics favor supporters or opponents\n\nIdentify the messaging and policy adjustments most likely to produce a passing vote without abandoning the affected neighborhood."
+  },
+  {
+    "name": "Crypto Prediction Market",
+    "file": "polymarket-trading.md",
+    "description": "Traders react to orderbook moves and breaking news on a prediction market.",
+    "prompt": "Simulate diverse crypto traders reacting to live prediction-market conditions.\n\nModel the reactions of: market makers quoting two-sided liquidity, arbitrageurs watching spot-versus-prediction drift, whales moving size, momentum traders chasing direction, mean-reversion traders fading extremes, news followers reacting to regulatory headlines, on-chain analysts tracking wallet flows, and retail degens making emotional long-shot bets.\n\nTrack:\n- Which trader archetypes are most profitable and under what conditions\n- How quickly information propagates from informed to uninformed participants\n- Whether herding or contrarian behavior dominates after a shock\n- How liquidity behaves when volatility spikes\n\nIdentify the most robust trading posture across the scenarios that emerge."
+  }
+]

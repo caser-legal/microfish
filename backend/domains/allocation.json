@@ -1,0 +1,217 @@
+{
+  "domain": "allocation",
+  "description": "A multi-party negotiation over a limited shared budget. Stakeholders claim funds, form coalitions, and concede ground. The budget is finite, so claims genuinely compete.",
+  "tracks": ["main"],
+
+  "kernels": {
+    "ledger": {
+      "cash_resource": "budget"
+    }
+  },
+
+  "resources": {
+    "budget": {"initial": 0, "description": "Funds secured by this stakeholder"},
+    "influence": {"initial": 10, "description": "Political capital, spent to press a claim"},
+    "goodwill": {"initial": 5, "description": "Standing with other parties, earned by conceding"}
+  },
+
+  "entities": [
+    {
+      "key": "common_pool",
+      "type": "Pool",
+      "attrs": {
+        "description": "The shared budget under negotiation",
+        "original_total": 1000000
+      },
+      "resources": {
+        "budget": 1000000
+      }
+    }
+  ],
+
+  "agent_attrs": {
+    "claims_won": 0
+  },
+
+  "actions": [
+    {
+      "verb": "CLAIM_FUNDS",
+      "description": "Spend influence to claim a share of the remaining pool. Costs 2 influence; fails if the pool is short or your influence is spent.",
+      "args": {
+        "amount": "number",
+        "justification": "string"
+      },
+      "effects": [
+        {"op": "add", "holder": "$actor", "resource": "influence", "amount": -2},
+        {"op": "transfer", "from": "common_pool", "to": "$actor", "resource": "budget", "amount": "$args.amount"},
+        {
+          "op": "append",
+          "type": "Claim",
+          "attrs": {
+            "amount": "$args.amount",
+            "justification": "$args.justification"
+          },
+          "as": "claim_key"
+        }
+      ]
+    },
+    {
+      "verb": "CONCEDE",
+      "description": "Release funds back to the pool to build goodwill with the other parties.",
+      "args": {
+        "amount": "number",
+        "reason": "string"
+      },
+      "effects": [
+        {"op": "transfer", "from": "$actor", "to": "common_pool", "resource": "budget", "amount": "$args.amount"},
+        {"op": "add", "holder": "$actor", "resource": "goodwill", "amount": 3}
+      ]
+    },
+    {
+      "verb": "FORM_COALITION",
+      "description": "Ally with another stakeholder, spending goodwill to combine your positions.",
+      "args": {
+        "partner": "entity",
+        "terms": "string"
+      },
+      "effects": [
+        {"op": "add", "holder": "$actor", "resource": "goodwill", "amount": -2},
+        {"op": "link", "from": "$actor", "rel": "allied_with", "to": "$args.partner"}
+      ]
+    },
+    {
+      "verb": "OPPOSE_CLAIM",
+      "description": "Publicly contest another party's claim, spending influence to do it.",
+      "args": {
+        "target": "entity",
+        "argument": "string"
+      },
+      "effects": [
+        {"op": "add", "holder": "$actor", "resource": "influence", "amount": -1},
+        {"op": "link", "from": "$actor", "rel": "opposes", "to": "$args.target"},
+        {
+          "op": "append",
+          "type": "Objection",
+          "attrs": {"argument": "$args.argument", "target": "$args.target"},
+          "as": "objection_key"
+        }
+      ]
+    },
+    {
+      "verb": "MAKE_CASE",
+      "description": "Argue your position publicly. Builds influence without spending resources.",
+      "args": {
+        "content": "string"
+      },
+      "effects": [
+        {
+          "op": "append",
+          "type": "Statement",
+          "attrs": {"content": "$args.content"},
+          "as": "statement_key"
+        },
+        {"op": "add", "holder": "$actor", "resource": "influence", "amount": 1}
+      ]
+    },
+    {
+      "verb": "WAIT",
+      "description": "Hold your position and observe how others move.",
+      "args": {},
+      "effects": [{"op": "noop"}]
+    }
+  ],
+
+  "observation": {
+    "self_attrs": ["archetype"],
+    "recent_events": 8,
+    "blocks": {
+      "remaining_pool": {
+        "source": "resource_leaderboard",
+        "resource": "budget",
+        "limit": 8
+      },
+      "recent_claims": {
+        "source": "entities",
+        "type": "Claim",
+        "limit": 6,
+        "fields": ["amount", "justification", "author"]
+      },
+      "objections": {
+        "source": "entities",
+        "type": "Objection",
+        "limit": 4,
+        "fields": ["argument", "target", "author"]
+      },
+      "your_allies": {
+        "source": "links",
+        "rel": "allied_with",
+        "direction": "from",
+        "of": "$actor",
+        "limit": 10
+      }
+    }
+  },
+
+  "events": [
+    {
+      "name": "BUDGET_CUT",
+      "at_round": 10,
+      "description": "The funding authority reduces the available pool, invalidating assumptions everyone was negotiating under.",
+      "effects": [
+        {"op": "add", "holder": "common_pool", "resource": "budget", "amount": -200000},
+        {"op": "set", "entity": "common_pool", "attr": "cut_at_round", "value": 10}
+      ]
+    }
+  ],
+
+  "metrics": [
+    {
+      "name": "budget_by_archetype",
+      "op": "resource_total",
+      "resource": "budget",
+      "by": "archetype",
+      "description": "Funds secured per stakeholder type, computed from actual transfers."
+    },
+    {
+      "name": "top_claimants",
+      "op": "rank",
+      "over": "budget",
+      "by": "archetype",
+      "label": "name",
+      "limit": 10,
+      "description": "Stakeholders ranked by funds secured."
+    },
+    {
+      "name": "goodwill_by_archetype",
+      "op": "resource_total",
+      "resource": "goodwill",
+      "by": "archetype",
+      "description": "Goodwill accumulated, showing who cooperated rather than competed."
+    },
+    {
+      "name": "action_mix",
+      "op": "count",
+      "by": "verb",
+      "description": "Distribution of negotiating behaviours."
+    },
+    {
+      "name": "rejection_analysis",
+      "op": "failure_rate",
+      "description": "Claims rejected for insufficient funds or influence, and why."
+    },
+    {
+      "name": "activity_per_round",
+      "op": "series",
+      "description": "Negotiation intensity over time."
+    }
+  ],
+
+  "verbalizers": {
+    "CLAIM_FUNDS": "{actor} claimed {amount} from the pool, arguing: \"{justification}\"",
+    "CONCEDE": "{actor} returned {amount} to the pool: \"{reason}\"",
+    "FORM_COALITION": "{actor} formed a coalition with {partner} on terms: \"{terms}\"",
+    "OPPOSE_CLAIM": "{actor} opposed {target}: \"{argument}\"",
+    "MAKE_CASE": "{actor} argued publicly: \"{content}\"",
+    "WAIT": "{actor} held position and waited"
+  }
+}

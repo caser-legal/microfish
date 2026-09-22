@@ -1,0 +1,180 @@
+{
+  "domain": "market",
+  "description": "A continuous prediction market with a live limit order book. Traders quote, take liquidity, and hold positions that settle at resolution. Profit and loss is computed from actual fills.",
+  "tracks": ["main"],
+
+  "kernels": {
+    "orderbook": {
+      "cash_resource": "cash",
+      "position_resource": "position",
+      "min_price": 0.01,
+      "max_price": 0.99,
+      "tick": 0.01
+    },
+    "ledger": {
+      "cash_resource": "cash"
+    }
+  },
+
+  "resources": {
+    "cash": {"initial": 10000, "description": "Settlement currency in USDC"},
+    "position": {"initial": 0, "allow_negative": true, "description": "Net contracts held; negative is short"}
+  },
+
+  "entities": [
+    {
+      "key": "BTC-100K",
+      "type": "Market",
+      "attrs": {
+        "question": "Will BTC close above $100K by resolution?",
+        "last": 0.62,
+        "resolution": "binary, pays 1.00 to the winning side"
+      }
+    }
+  ],
+
+  "agent_attrs": {
+    "realized_pnl": 0.0,
+    "unrealized_pnl": 0.0
+  },
+
+  "actions": [
+    {
+      "verb": "PLACE_ORDER",
+      "description": "Place a limit order. Crosses the spread to fill immediately, or rests as liquidity. Buying costs cash; you cannot bid more than you hold.",
+      "args": {
+        "side": "enum[buy,sell]",
+        "size": "number",
+        "limit": "number"
+      },
+      "effects": [
+        {
+          "op": "kernel.orderbook.submit",
+          "book": "BTC-100K",
+          "side": "$args.side",
+          "size": "$args.size",
+          "limit": "$args.limit",
+          "actor": "$actor"
+        }
+      ]
+    },
+    {
+      "verb": "CANCEL_ORDERS",
+      "description": "Cancel all of your resting orders in the market.",
+      "args": {},
+      "effects": [
+        {"op": "kernel.orderbook.cancel", "book": "BTC-100K", "actor": "$actor"}
+      ]
+    },
+    {
+      "verb": "POST_ANALYSIS",
+      "description": "Publish your read on the market so other traders can see it. Costs nothing but moves no price by itself.",
+      "args": {
+        "content": "string",
+        "stance": "enum[bullish,bearish,neutral]"
+      },
+      "effects": [
+        {
+          "op": "append",
+          "type": "Analysis",
+          "attrs": {
+            "content": "$args.content",
+            "stance": "$args.stance"
+          },
+          "as": "analysis_key"
+        }
+      ]
+    },
+    {
+      "verb": "HOLD",
+      "description": "Take no action this round and wait for better conditions.",
+      "args": {},
+      "effects": [{"op": "noop"}]
+    }
+  ],
+
+  "observation": {
+    "self_attrs": ["archetype", "realized_pnl", "unrealized_pnl"],
+    "recent_events": 8,
+    "blocks": {
+      "market_quote": {
+        "source": "kernel",
+        "kernel": "orderbook",
+        "method": "quote",
+        "params": {"book": "BTC-100K"}
+      },
+      "market_info": {
+        "source": "attr",
+        "entity": "BTC-100K",
+        "fields": ["question", "last", "shocked_at_round"]
+      },
+      "recent_analysis": {
+        "source": "entities",
+        "type": "Analysis",
+        "limit": 5,
+        "fields": ["content", "stance", "author"]
+      }
+    }
+  },
+
+  "events": [
+    {
+      "name": "RESOLUTION_COLLAPSE",
+      "at_round": 15,
+      "description": "Breaking news invalidates the contract. The market gaps from near certainty to near zero within seconds.",
+      "effects": [
+        {"op": "kernel.orderbook.shock", "book": "BTC-100K", "price": 0.02},
+        {"op": "kernel.ledger.settle", "resource": "position", "price": 0.02}
+      ]
+    }
+  ],
+
+  "metrics": [
+    {
+      "name": "pnl_by_archetype",
+      "op": "group_sum",
+      "over": "agent.realized_pnl",
+      "by": "agent.archetype",
+      "description": "Total and average realized profit and loss per trader archetype, computed from actual fills."
+    },
+    {
+      "name": "top_traders",
+      "op": "rank",
+      "over": "agent.realized_pnl",
+      "by": "agent.archetype",
+      "label": "name",
+      "limit": 10,
+      "description": "Individual traders ranked by realized profit and loss."
+    },
+    {
+      "name": "cash_by_archetype",
+      "op": "resource_total",
+      "resource": "cash",
+      "by": "archetype",
+      "description": "Final cash held, grouped by archetype."
+    },
+    {
+      "name": "action_mix",
+      "op": "count",
+      "by": "verb",
+      "description": "How often each action was taken."
+    },
+    {
+      "name": "rejection_analysis",
+      "op": "failure_rate",
+      "description": "Which actions were rejected by market constraints, and why."
+    },
+    {
+      "name": "activity_per_round",
+      "op": "series",
+      "description": "Actions per round, showing when trading intensified."
+    }
+  ],
+
+  "verbalizers": {
+    "PLACE_ORDER": "{actor} placed a {side} order for {size} contracts at {limit}, filling {filled}",
+    "CANCEL_ORDERS": "{actor} cancelled {cancelled_orders} resting orders",
+    "POST_ANALYSIS": "{actor} published a {stance} analysis: \"{content}\"",
+    "HOLD": "{actor} stayed out of the market this round"
+  }
+}

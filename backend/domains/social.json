@@ -1,0 +1,182 @@
+{
+  "domain": "social",
+  "description": "Social media sentiment dynamics across two platforms. Participants post, amplify, and argue; attention and reach are earned rather than assumed.",
+  "tracks": ["twitter", "reddit"],
+
+  "kernels": {
+    "content": {
+      "content_type": "Post",
+      "recency_weight": 1.0,
+      "popularity_weight": 1.0,
+      "echo_chamber_strength": 0.5
+    }
+  },
+
+  "resources": {
+    "reputation": {"initial": 100, "description": "Standing in the community"}
+  },
+
+  "entities": [],
+
+  "agent_attrs": {},
+
+  "actions": [
+    {
+      "verb": "CREATE_POST",
+      "description": "Publish an original post stating your view.",
+      "args": {
+        "content": "string"
+      },
+      "effects": [
+        {
+          "op": "append",
+          "type": "Post",
+          "attrs": {"content": "$args.content"},
+          "as": "post_key"
+        },
+        {"op": "add", "holder": "$actor", "resource": "reputation", "amount": 1}
+      ]
+    },
+    {
+      "verb": "LIKE_POST",
+      "description": "Endorse someone else's post. You cannot like your own, or the same post twice.",
+      "args": {
+        "post_id": "entity"
+      },
+      "effects": [
+        {"op": "kernel.content.engage", "target": "$args.post_id", "relation": "likes"}
+      ]
+    },
+    {
+      "verb": "REPOST",
+      "description": "Amplify a post to your own audience, spreading it further than a like.",
+      "args": {
+        "post_id": "entity"
+      },
+      "effects": [
+        {"op": "kernel.content.engage", "target": "$args.post_id", "relation": "reposts"}
+      ]
+    },
+    {
+      "verb": "QUOTE_POST",
+      "description": "Share a post with your own commentary attached.",
+      "args": {
+        "post_id": "entity",
+        "content": "string"
+      },
+      "effects": [
+        {"op": "kernel.content.engage", "target": "$args.post_id", "relation": "reposts"},
+        {
+          "op": "append",
+          "type": "Post",
+          "attrs": {"content": "$args.content", "quotes": "$args.post_id"},
+          "as": "post_key"
+        }
+      ]
+    },
+    {
+      "verb": "REPLY",
+      "description": "Respond directly to a post, continuing the conversation.",
+      "args": {
+        "post_id": "entity",
+        "content": "string"
+      },
+      "effects": [
+        {
+          "op": "append",
+          "type": "Post",
+          "attrs": {"content": "$args.content", "replies_to": "$args.post_id"},
+          "as": "post_key"
+        },
+        {"op": "link", "from": "$actor", "rel": "replied_to", "to": "$args.post_id"}
+      ]
+    },
+    {
+      "verb": "FOLLOW",
+      "description": "Follow another participant so their content reaches you more often.",
+      "args": {
+        "target": "entity"
+      },
+      "effects": [
+        {"op": "link", "from": "$actor", "rel": "follows", "to": "$args.target"}
+      ]
+    },
+    {
+      "verb": "DO_NOTHING",
+      "description": "Stay quiet this round.",
+      "args": {},
+      "effects": [{"op": "noop"}]
+    }
+  ],
+
+  "observation": {
+    "self_attrs": ["archetype"],
+    "recent_events": 6,
+    "blocks": {
+      "your_feed": {
+        "source": "kernel",
+        "kernel": "content",
+        "method": "feed",
+        "params": {"viewer": "$actor", "limit": 8}
+      },
+      "trending": {
+        "source": "kernel",
+        "kernel": "content",
+        "method": "trending",
+        "params": {"limit": 5}
+      },
+      "you_follow": {
+        "source": "links",
+        "rel": "follows",
+        "direction": "from",
+        "of": "$actor",
+        "limit": 10
+      }
+    }
+  },
+
+  "events": [],
+
+  "metrics": [
+    {
+      "name": "posts_by_archetype",
+      "op": "count",
+      "verb": "CREATE_POST",
+      "by": "actor",
+      "description": "Who published the most original content."
+    },
+    {
+      "name": "reputation_by_archetype",
+      "op": "resource_total",
+      "resource": "reputation",
+      "by": "archetype",
+      "description": "Standing accumulated per archetype."
+    },
+    {
+      "name": "action_mix",
+      "op": "count",
+      "by": "verb",
+      "description": "Distribution of behaviours across the simulation."
+    },
+    {
+      "name": "rejection_analysis",
+      "op": "failure_rate",
+      "description": "Which actions were rejected and why."
+    },
+    {
+      "name": "activity_per_round",
+      "op": "series",
+      "description": "Actions per round, showing when the conversation peaked."
+    }
+  ],
+
+  "verbalizers": {
+    "CREATE_POST": "{actor} posted: \"{content}\"",
+    "LIKE_POST": "{actor} liked {target}",
+    "REPOST": "{actor} reposted {target}, amplifying it to {total} total shares",
+    "QUOTE_POST": "{actor} quoted {post_id} with commentary: \"{content}\"",
+    "REPLY": "{actor} replied to {post_id}: \"{content}\"",
+    "FOLLOW": "{actor} followed {target}",
+    "DO_NOTHING": "{actor} stayed quiet"
+  }
+}
